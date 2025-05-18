@@ -1,0 +1,56 @@
+# main.py
+
+import ccxt
+import time
+from config import *
+from strategy import fetch_ohlcv, generate_signal
+
+exchange = ccxt.binance({
+    'apiKey': BINANCE_API_KEY,
+    'secret': BINANCE_API_SECRET,
+    'enableRateLimit': True,
+    'options': {'defaultType': 'future'}
+})
+
+exchange.set_leverage(LEVERAGE, SYMBOL)
+
+def get_balance():
+    balance = exchange.fetch_balance({'type': 'future'})
+    usdt = balance['total']['USDT']
+    return usdt
+
+def calculate_position_size(usdt):
+    return round((usdt * QUANTITY_PERCENT), 2)
+
+def place_order(direction, price, quantity):
+    if direction == 'buy':
+        order = exchange.create_market_buy_order(SYMBOL, quantity)
+        stop_price = price * (1 - STOP_LOSS_PERCENT / 100)
+        take_price = price * (1 + TAKE_PROFIT_PERCENT / 100)
+    elif direction == 'sell':
+        order = exchange.create_market_sell_order(SYMBOL, quantity)
+        stop_price = price * (1 + STOP_LOSS_PERCENT / 100)
+        take_price = price * (1 - TAKE_PROFIT_PERCENT / 100)
+
+    # OCO 기능은 바이낸스 API 직접 연결 시 수동 설정 필요
+    print(f"{direction.upper()} 주문 체결! 손절가: {stop_price:.2f}, 익절가: {take_price:.2f}")
+
+while True:
+    try:
+        df_signal = fetch_ohlcv(exchange, SYMBOL, timeframe=TIMEFRAME_SIGNAL)
+        signal = generate_signal(df_signal)
+
+        if signal:
+            df_entry = fetch_ohlcv(exchange, SYMBOL, timeframe=TIMEFRAME_ENTRY)
+            entry_price = df_entry.iloc[-1]['close']
+            usdt = get_balance()
+            qty = calculate_position_size(usdt) / entry_price
+
+            place_order(signal, entry_price, qty)
+            print(f"{signal.upper()} 진입 at {entry_price}, 수량: {qty}")
+        
+        time.sleep(60)
+
+    except Exception as e:
+        print("에러 발생:", str(e))
+        time.sleep(60)
