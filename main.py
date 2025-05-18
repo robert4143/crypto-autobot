@@ -1,7 +1,7 @@
-# main.py
-
 import ccxt
 import time
+import threading
+from flask import Flask
 from config import *
 from strategy import fetch_ohlcv, generate_signal
 
@@ -32,35 +32,39 @@ def place_order(direction, price, quantity):
         stop_price = price * (1 + STOP_LOSS_PERCENT / 100)
         take_price = price * (1 - TAKE_PROFIT_PERCENT / 100)
 
-    # OCO 기능은 바이낸스 API 직접 연결 시 수동 설정 필요
     print(f"{direction.upper()} 주문 체결! 손절가: {stop_price:.2f}, 익절가: {take_price:.2f}")
 
-while True:
-    try:
-        df_signal = fetch_ohlcv(exchange, SYMBOL, timeframe=TIMEFRAME_SIGNAL)
-        signal = generate_signal(df_signal)
+def run_bot():
+    while True:
+        try:
+            df_signal = fetch_ohlcv(exchange, SYMBOL, timeframe=TIMEFRAME_SIGNAL)
+            signal = generate_signal(df_signal)
 
-        if signal:
-            df_entry = fetch_ohlcv(exchange, SYMBOL, timeframe=TIMEFRAME_ENTRY)
-            entry_price = df_entry.iloc[-1]['close']
-            usdt = get_balance()
-            qty = calculate_position_size(usdt) / entry_price
+            if signal:
+                df_entry = fetch_ohlcv(exchange, SYMBOL, timeframe=TIMEFRAME_ENTRY)
+                entry_price = df_entry.iloc[-1]['close']
+                usdt = get_balance()
+                qty = calculate_position_size(usdt) / entry_price
 
-            place_order(signal, entry_price, qty)
-            print(f"{signal.upper()} 진입 at {entry_price}, 수량: {qty}")
-        
-        time.sleep(60)
+                place_order(signal, entry_price, qty)
+                print(f"{signal.upper()} 진입 at {entry_price}, 수량: {qty}")
+            
+            time.sleep(60)
 
-    except Exception as e:
-        print("에러 발생:", str(e))
-        time.sleep(60)
+        except Exception as e:
+            print("에러 발생:", str(e))
+            time.sleep(60)
 
-# main.py 끝부분에 이 코드 추가 (Flask로 가짜 포트 열기)
-from flask import Flask
+# ✅ 자동매매 루프를 백그라운드에서 실행
+threading.Thread(target=run_bot).start()
+
+# ✅ Render가 포트를 감지할 수 있게 Flask 실행
 app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return 'Bot is running!'
+    return '✅ 자동매매 봇 실행 중입니다 (Render Flask)'
 
+# ✅ 포트 반드시 열기 (10000 또는 8080 등)
 app.run(host='0.0.0.0', port=10000)
+
