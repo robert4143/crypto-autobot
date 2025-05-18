@@ -54,3 +54,13 @@ while True:
     except Exception as e:
         print("에러 발생:", str(e))
         time.sleep(60)
+
+# main.py 끝부분에 이 코드 추가 (Flask로 가짜 포트 열기)
+from flask import Flask
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return 'Bot is running!'
+
+app.run(host='0.0.0.0', port=10000)
