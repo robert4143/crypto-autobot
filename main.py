@@ -66,5 +66,8 @@ def index():
     return '✅ 자동매매 봇 실행 중입니다 (Render Flask)'
 
 # ✅ 포트 반드시 열기 (10000 또는 8080 등)
-app.run(host='0.0.0.0', port=10000)
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 10000))  # Render에서 포트 지정
+    app.run(host='0.0.0.0', port=port)
+
 
