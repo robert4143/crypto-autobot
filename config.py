@@ -1,16 +1,17 @@
 import os
+from dotenv import load_dotenv
 
-BINANCE_API_KEY = 'your_api_key'
-BINANCE_API_SECRET = 'your_api_secret'
+load_dotenv()  # .env 파일 또는 Render 환경 변수 로드
 
-SYMBOL = 'ETH/USDT'  # 또는 BTC/USDT
-LEVERAGE = 10
-QUANTITY_PERCENT = 0.95
+BINANCE_API_KEY = os.getenv('BINANCE_API_KEY')
+BINANCE_API_SECRET = os.getenv('BINANCE_API_SECRET')
 
-# ✅ 아래 2줄 추가
-TIMEFRAME_SIGNAL = '15m'   # 신호 확인용 캔들 차트 주기
-TIMEFRAME_ENTRY = '1m'     # 진입 가격 확인용
+SYMBOL = os.getenv('SYMBOL', 'ETH/USDT')
+LEVERAGE = int(os.getenv('LEVERAGE', 10))
+QUANTITY_PERCENT = float(os.getenv('QUANTITY_PERCENT', 0.95))
 
-# 리스크 관리 설정
-STOP_LOSS_PERCENT = 2      # 손절 비율 (%)
-TAKE_PROFIT_PERCENT = 3    # 익절 비율 (%)
+TIMEFRAME_SIGNAL = os.getenv('TIMEFRAME_SIGNAL', '15m')
+TIMEFRAME_ENTRY = os.getenv('TIMEFRAME_ENTRY', '1m')
+
+STOP_LOSS_PERCENT = float(os.getenv('STOP_LOSS_PERCENT', 2))
+TAKE_PROFIT_PERCENT = float(os.getenv('TAKE_PROFIT_PERCENT', 3))
